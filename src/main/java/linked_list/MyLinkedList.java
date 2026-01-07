@@ -129,7 +129,6 @@ public class MyLinkedList<E> {
 
         x.prev = null;
         x.next = null;
-        size--;
     }
     
     // 查
