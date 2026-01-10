@@ -260,7 +260,7 @@ class Solution {
      */
     public int pivotIndex(int[] nums) {
         // 创建前缀和数组对象，用于快速计算任意区间的和
-        // NumArray内部维护一个前缀和数组preSum，其中preSum[i]表示nums[0]到nums[i-1]的累加和
+        // NumArray内部维护一个前缀和数组preSum，其中preSum[i]表示nums[0]到nums[i]的累加和
         NumArray numArray = new NumArray(nums);
         int n = nums.length; // 获取数组长度
 
@@ -339,6 +339,245 @@ class Solution {
 
         return ans; // 返回结果数组
     }
+
+    /**
+     * 寻找最长连续子数组，使得其中0和1的数量相等
+     * <p>
+     * 算法思路：
+     * 1. 转换：将数组中的0转换为-1，这样问题就转化为寻找和为0的最长子数组
+     * 2. 前缀和：使用前缀和数组记录从开始到当前位置的累计和
+     * 3. 哈希表：利用哈希表记录每个前缀和第一次出现的位置
+     * 4. 匹配：当相同的前缀和再次出现时，说明这两个位置之间的子数组和为0
+     * <p>
+     * 核心思想：如果preSum[i] == preSum[j]（i < j），则区间[i+1, j]的和为0，
+     * 即该区间内0和1的数量相等。
+     * <p>
+     * 时间复杂度：O(n)，其中n是数组长度
+     * 空间复杂度：O(n)，用于存储前缀和数组和哈希表
+     *
+     * @param nums 输入的二进制数组（只包含0和1）
+     * @return 满足条件的最长子数组的长度
+     */
+    public int findMaxLength(int[] nums) {
+        int n = nums.length; // 获取数组长度
+
+        // 构建前缀和数组：长度为n+1便于处理边界情况
+        // preSum[i]表示从nums[0]到nums[i-1]的前缀和（经过0转-1的转换）
+        int[] preSum = new int[n + 1];
+        preSum[0] = 0; // 前缀和数组的初始值为0（空数组的和）
+
+        // 构建前缀和数组：将0视为-1，1保持不变
+        // 这样如果某个子数组中0和1数量相等，那么其和就为0
+        for (int i = 1; i <= n; i++) {
+            // 如果当前元素是0，则在前缀和基础上减1；如果是1，则加1
+            preSum[i] = preSum[i - 1] + (nums[i - 1] == 0 ? -1 : nums[i - 1]);
+        }
+
+        // 创建哈希表，用于存储前缀和值到其首次出现索引的映射
+        // key: 前缀和值，value: 该前缀和首次出现的索引位置
+        HashMap<Integer, Integer> valToIndex = new HashMap<>();
+
+        int res = 0; // 记录最长符合条件子数组的长度
+
+        // 遍历前缀和数组，寻找相同前缀和值的最远距离
+        for (int i = 0; i < preSum.length; i++) {
+            // 如果当前前缀和值之前没有出现过
+            if (!valToIndex.containsKey(preSum[i])) {
+                // 将该前缀和值与其索引建立映射关系
+                // 只记录第一次出现的位置，这样能保证后续计算的距离最大
+                valToIndex.put(preSum[i], i);
+            } else {
+                // 如果当前前缀和值之前出现过
+                // 说明从上次出现的位置到当前位置之间的子数组和为0
+                // 即该子数组中0和1的数量相等
+                // 计算当前子数组长度并更新最大长度
+                res = Math.max(res, i - valToIndex.get(preSum[i]));
+            }
+        }
+
+        return res; // 返回最长符合条件子数组的长度
+    }
+
+    /**
+     * 检查数组中是否存在长度至少为2的子数组，其元素和为k的倍数
+     * <p>
+     * 算法思路：
+     * 1. 使用前缀和数组计算累积和
+     * 2. 利用同余定理：如果两个前缀和对k取模相等，则它们之间的子数组和一定是k的倍数
+     * 3. 使用哈希表记录每个余数首次出现的位置，当再次遇到相同余数时，检查距离是否>=2
+     * <p>
+     * 核心原理：如果preSum[i] % k == preSum[j] % k (i < j)，则(preSum[j] - preSum[i]) % k == 0，
+     * 即区间[i+1, j]的和是k的倍数。
+     *
+     * @param nums 输入的整数数组
+     * @param k    给定的整数
+     * @return 如果存在满足条件的子数组返回true，否则返回false
+     */
+    public boolean checkSubarraySum(int[] nums, int k) {
+        int n = nums.length; // 获取数组长度
+
+        // 构建前缀和数组：长度为n+1便于处理边界情况
+        // preSum[i]表示从nums[0]到nums[i-1]的前缀和
+        int[] preSum = new int[n + 1];
+        preSum[0] = 0; // 前缀和数组的初始值为0（空数组的和）
+
+        // 构建前缀和数组：计算从数组开始到每个位置的累积和
+        for (int i = 1; i <= n; i++) {
+            preSum[i] = preSum[i - 1] + nums[i - 1];
+        }
+
+        // 创建哈希表，用于存储前缀和对k取模的结果到其首次出现索引的映射
+        // key: 前缀和 % k 的余数，value: 该余数首次出现的索引位置
+        HashMap<Integer, Integer> valToIndex = new HashMap<>();
+
+        // 第一次遍历：记录每个余数首次出现的位置
+        for (int i = 0; i < preSum.length; i++) {
+            int val = preSum[i] % k; // 计算当前前缀和对 k 取模的余数
+            if (!valToIndex.containsKey(val)) {
+                // 只记录余数首次出现的位置，这样能保证后续计算的距离最大
+                valToIndex.put(val, i);
+            }
+        }
+
+        // 第二次遍历：查找相同余数的最远距离，检查是否存在长度>=2的子数组
+        for (int i = 0; i < preSum.length; i++) {
+            int need = preSum[i] % k; // 当前前缀和对 k 取模的余数
+
+            // 如果该余数之前出现过，说明找到了两个前缀和对k取模相等的情况
+            if (valToIndex.containsKey(need)) {
+                // 计算两个相同余数之间的距离（即子数组的长度）
+                // i - valToIndex.get(need) 表示从首次出现该余数的位置到当前位置的距离
+                if (i - valToIndex.get(need) >= 2) {
+                    // 如果距离大于等于2，说明找到了长度至少为2的子数组，其和为k的倍数
+                    return true;
+                }
+            }
+        }
+
+        // 遍历完所有位置都没有找到满足条件的子数组，返回false
+        return false;
+    }
+
+    /**
+     * 计算数组中和为 k 的连续子数组的个数
+     * <p>
+     * 算法思路：
+     * 1. 使用前缀和 + 哈希表优化：遍历数组过程中维护前缀和，并用哈希表记录每个前缀和出现的次数
+     * 2. 对于当前前缀和preSum，如果存在之前的前缀和等于preSum - k，则说明存在子数组和为k
+     * 3. 核心原理：如果preSum[j] - preSum[i] = k，则区间[i+1, j]的和为k
+     *
+     * @param nums 输入的整数数组
+     * @param k    目标和
+     * @return 和为 k 的连续子数组的个数
+     */
+    public int subarraySum(int[] nums, int k) {
+        // 创建哈希表存储前缀和及其出现次数的映射
+        // key: 前缀和值，value: 该前缀和出现的次数
+        Map<Integer, Integer> countMap = new HashMap<>();
+
+        // 初始化：前缀和为0出现1次（对应空数组的情况）
+        // 这是为了处理从数组开始到某位置的子数组和正好等于k的情况
+        countMap.put(0, 1);
+
+        // 记录满足条件的子数组个数
+        int res = 0;
+
+        // 当前前缀和，表示从数组开始到当前位置的累积和
+        int preSum = 0;
+
+        // 遍历数组中的每个元素
+        for (int num : nums) {
+            // 更新前缀和：加上当前元素
+            preSum += num;
+
+            // 计算需要寻找的目标前缀和
+            // 如果存在前缀和为(preSum - k)的情况，则说明存在子数组和为k
+            // 因为：当前前缀和 - 目标前缀和 = k → 目标前缀和 = 当前前缀和 - k
+            int need = preSum - k;
+
+            // 如果哈希表中存在目标前缀和，说明找到了若干个和为k的子数组
+            // 将对应的出现次数加到结果中
+            if (countMap.containsKey(need)) {
+                res += countMap.get(need);
+            }
+
+            // 将当前前缀和加入哈希表，更新其出现次数
+            // getOrDefault方法获取当前前缀和的出现次数，如果不存在则默认为0
+            countMap.put(preSum, countMap.getOrDefault(preSum, 0) + 1);
+        }
+
+        return res; // 返回和为 k 的连续子数组的个数
+    }
+
+    /**
+     * 寻找最长的"表现良好"时间段
+     * <p>
+     * "表现良好"的定义：工作小时数严格大于8小时的天数 > 工作小时数小于等于8小时的天数
+     * 算法思路：
+     * 1. 转换问题：将hours[i] > 8的天数标记为+1，hours[i] <= 8的天数标记为-1
+     * 2. 问题转化为：寻找和大于0的最长子数组（因为+1多于-1时总和才大于0）
+     * 3. 使用前缀和 + 哈希表优化：
+     * - 前缀和preSum[i]表示从开始到第i天的累积分数差值
+     * - 如果preSum[i] > 0，说明从开始到第i天整体表现良好
+     * - 如果preSum[i] <= 0，需要找到最早的j，使得preSum[i] - preSum[j] > 0，即preSum[j] < preSum[i]
+     * - 为了最大化长度，我们只记录每个前缀和值第一次出现的位置
+     * <p>
+     * 核心思想：如果preSum[i] - preSum[j] > 0，则区间[j+1, i]是表现良好的时间段
+     * <p>
+     * 时间复杂度：O(n)，其中n是数组长度
+     * 空间复杂度：O(n)，用于存储前缀和数组和哈希表
+     *
+     * @param hours 工作小时数组，hours[i]表示第i天的工作小时数
+     * @return 最长"表现良好"时间段的长度
+     */
+    public int longestWPI(int[] hours) {
+        int n = hours.length; // 获取工作天数
+
+        // 构建前缀和数组：长度为n+1便于处理边界情况
+        // preSum[i]表示从第1天到第i天的累积分数差值（>8小时记为+1，≤8小时记为-1）
+        int[] preSum = new int[n + 1];
+        preSum[0] = 0; // 前缀和数组的初始值为0（空时间段的差值为0）
+
+        // 创建哈希表，用于存储前缀和值到其首次出现索引的映射
+        // key: 前缀和值，value: 该前缀和首次出现的天数索引
+        // 只记录首次出现的位置，这样能保证后续计算的时间段长度最大
+        Map<Integer, Integer> valToIndex = new HashMap<>();
+
+        int res = 0; // 记录最长"表现良好"时间段的长度
+
+        // 遍历每一天，构建前缀和并寻找最长的正数区间
+        for (int i = 1; i < n + 1; i++) {
+            // 计算当前前缀和：如果当天工作时间>8小时则+1，否则-1
+            // 这样如果某段时间内+1比-1多，前缀和就为正，表示这段时间表现良好
+            preSum[i] = preSum[i - 1] + (hours[i - 1] > 8 ? 1 : -1);
+
+            // 如果当前前缀和值之前没有出现过，记录其首次出现的位置
+            // 只记录第一次出现的位置，保证后续计算的距离最大
+            if (!valToIndex.containsKey(preSum[i])) {
+                valToIndex.put(preSum[i], i);
+            }
+
+            // 情况1：如果当前前缀和大于0，说明从第1天到第i天整体表现良好
+            if (preSum[i] > 0) {
+                // 更新最长时间段长度为i（从第1天到第i天共i天）
+                res = Math.max(res, i);
+            } else {
+                // 情况2：如果当前前缀和不大于0，尝试找到一个较早的位置j
+                // 使得preSum[i] - preSum[j] > 0，即preSum[j] < preSum[i]
+                // 由于我们只关心preSum[j] < preSum[i]的情况，而preSum[i]是整数
+                // 所以最接近的可能是preSum[j] = preSum[i] - 1
+                if (valToIndex.containsKey(preSum[i] - 1)) {
+                    // 找到最早出现preSum[i] - 1的位置j
+                    int j = valToIndex.get(preSum[i] - 1);
+                    // 区间[j+1, i]的前缀和差值为preSum[i] - preSum[j] = preSum[i] - (preSum[i] - 1) = 1 > 0
+                    // 所以这段区间是表现良好的，长度为i - j
+                    res = Math.max(res, i - j);
+                }
+            }
+        }
+
+        return res; // 返回最长"表现良好"时间段的长度
+    }
 }
 
 /**
@@ -347,6 +586,7 @@ class Solution {
  * 算法思路：
  * 1. 预处理：构建前缀和数组preSum，其中preSum[i]表示原数组nums[0]到nums[i-1]的累加和
  * 2. 查询：利用前缀和的性质，区间[left, right]的和 = preSum[right+1] - preSum[left]
+ * <img src="https://hanserwei-1308845726.cos.ap-chengdu.myqcloud.com/markdown/20260110092935960.png" alt="前缀和示意图">
  * <p>
  * 时间复杂度：
  * - 构造函数：O(n)，其中n是输入数组长度
@@ -374,7 +614,7 @@ class NumArray {
         // 构建前缀和数组
         // preSum[i] = preSum[i-1] + nums[i-1]
         // 即：前i个元素的和 = 前i-1个元素的和 + 第i个元素
-        for (int i = 1; i <= nums.length; i++) {
+        for (int i = 1; i < nums.length + 1; i++) {
             preSum[i] = preSum[i - 1] + nums[i - 1];
         }
     }
@@ -433,12 +673,13 @@ class NumMatrix {
 
         // 构建二维前缀和数组
         // 对于每个位置(i,j)，计算从(0,0)到(i-1,j-1)的矩形区域内所有元素的和
-        for (int i = 1; i <= m; i++) {
-            for (int j = 1; j <= n; j++) {
-                // 二维前缀和的计算公式：
-                // preSum[i][j] = 左边区域的和 + 上面区域的和 - 重叠区域的和 + 当前位置的值
-                // 即：preSum[i][j] = preSum[i-1][j] + preSum[i][j-1] - preSum[i-1][j-1] + matrix[i-1][j-1]
-                preSum[i][j] = preSum[i - 1][j] + preSum[i][j - 1] - preSum[i - 1][j - 1] + matrix[i - 1][j - 1];
+        // 这样写不仅好理解，而且以后不管矩阵大小怎么变，都不会越界
+        for (int i = 1; i < preSum.length; i++) {
+            for (int j = 1; j < preSum[0].length; j++) {
+                // 注意：这里取原矩阵 matrix 的值时，依然要 -1
+                // 因为 preSum 的索引 i 对应 matrix 的 i-1
+                preSum[i][j] = preSum[i - 1][j] + preSum[i][j - 1] - preSum[i - 1][j - 1]
+                        + matrix[i - 1][j - 1];
             }
         }
     }
@@ -478,4 +719,94 @@ class ListNode {
         this.val = val;
     }
 
+}
+
+/**
+ * 设计一个支持在末尾添加数字并计算最后 k 个数字乘积的数据结构
+ * <p>
+ * 算法思路：
+ * 1. 使用前缀乘积数组：维护一个数组记录从开头到当前位置所有数字的累积乘积
+ * 2. 当遇到0时：清空前缀乘积数组，重新开始（因为任何数乘0都为0）
+ * 3. 查询乘积：利用前缀乘积的除法性质快速计算最后k个数的乘积
+ * <p>
+ * 时间复杂度：
+ * - add操作：O(1)
+ * - getProduct操作：O(1)
+ * 空间复杂度：O(n)，其中n是add操作的次数
+ */
+class ProductOfNumbers {
+
+    /**
+     * 前缀乘积数组，preProduct[i]表示从第1个到第i个添加的数字的乘积
+     * 初始时添加1作为哨兵值，方便后续计算
+     * 当遇到0时，清空整个数组并重新添加1，因为0会使后续所有乘积变为0
+     */
+    List<Integer> preProduct = new ArrayList<>();
+
+    /**
+     * 构造函数：初始化前缀乘积数组，在开头放置哨兵值1
+     * 哨兵值的作用是简化边界处理，使得getProduct(k)可以直接使用除法计算
+     */
+    public ProductOfNumbers() {
+        preProduct.add(1);
+    }
+
+    /**
+     * 在数据流末尾添加一个数字
+     * <p>
+     * 算法步骤：
+     * 1. 如果添加的是0，清空前缀乘积数组并重新添加哨兵值1
+     * 2. 否则，计算当前前缀乘积并添加到数组末尾
+     *
+     * @param num 要添加的数字
+     */
+    public void add(int num) {
+        // 特殊处理：如果添加的数字是0
+        // 因为任何数乘以0都为0，且0会影响之后所有的乘积计算
+        // 所以直接清空前缀乘积数组，重新开始计算
+        if (num == 0) {
+            preProduct.clear();      // 清空之前的前缀乘积
+            preProduct.add(1);       // 重新添加哨兵值1
+            return;                  // 直接返回，不再执行后续逻辑
+        }
+
+        // 获取当前前缀乘积数组的长度
+        int size = preProduct.size();
+
+        // 计算新的前缀乘积：前一个前缀乘积 × 当前数字
+        // preProduct.get(size - 1)是前一个前缀乘积
+        // num是要添加的新数字
+        preProduct.add(preProduct.get(size - 1) * num);
+    }
+
+    /**
+     * 计算最后 k 个数字的乘积
+     * <p>
+     * 算法原理：
+     * 利用前缀乘积数组的性质：
+     * 如果要求第(n-k+1)个到第n个数字的乘积
+     * 等于前n个数字的乘积 ÷ 前(n-k)个数字的乘积
+     * 即：preProduct[n] / preProduct[n-k]
+     *
+     * @param k 需要计算乘积的数字个数（从末尾开始计数）
+     * @return 最后 k 个数字的乘积
+     */
+    public int getProduct(int k) {
+        // 获取前缀乘积数组的长度
+        int size = preProduct.size();
+
+        // 边界检查：如果请求的k大于已有的数字个数（不包括哨兵）
+        // 说明在最近的k个数字中一定包含0（因为遇到0时会清空数组）
+        // 所以返回0
+        if (size - 1 < k) {  // size-1是因为第一个元素是哨兵值
+            return 0;
+        }
+
+        // 计算最后k个数字的乘积
+        // preProduct.get(size - 1): 前面所有数字的乘积（包括最新添加的）
+        // preProduct.get(size - k - 1): 前面(size - k - 1)个数字的乘积
+        // 两者相除即为最后k个数字的乘积
+        // 例如：要求最后3个数的乘积，就是总乘积 ÷ 前面较老的部分的乘积
+        return preProduct.get(size - 1) / preProduct.get(size - k - 1);
+    }
 }
