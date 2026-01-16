@@ -4,7 +4,7 @@ import java.util.*;
 
 class Solution {
     /**
-     * 找到两个有序数组中和最小的k个数对
+     * 找到两个有序数组中和最小的 k 个数对
      * <p>
      * 算法思路：
      * 1. 使用最小堆来维护当前可能的最小数对
@@ -18,7 +18,7 @@ class Solution {
      * @param nums1 第一个有序数组
      * @param nums2 第二个有序数组
      * @param k     需要返回的数对数量
-     * @return 和最小的k个数对
+     * @return 和最小的 k 个数对
      */
     public List<List<Integer>> kSmallestPairs(int[] nums1, int[] nums2, int k) {
         // 创建最小堆，比较器根据数对和进行排序
@@ -768,6 +768,383 @@ class Solution {
             // 对每一行调用反转方法，实现水平翻转
             reverse(row);
         }
+    }
+
+    /**
+     * 删除链表中的重复元素，保留所有不重复的节点
+     * <p>
+     * 算法思路：
+     * 1. 使用两个虚拟头节点分别管理不重复节点和重复节点
+     * 2. 遍历原链表，根据当前节点是否重复来决定将其连接到哪个链表
+     * 3. 判断重复的条件：
+     * - 与下一个节点值相同
+     * - 与重复链表的最后一个节点值相同
+     * 4. 最终返回不重复节点链表的头节点
+     * <p>
+     * 时间复杂度：O(n)，其中n是链表长度
+     * 空间复杂度：O(1)，只使用了常数个额外节点
+     *
+     * @param head 链表头节点
+     * @return 删除重复元素后的链表头节点
+     */
+    public ListNode deleteDuplicates(ListNode head) {
+        // 创建两个虚拟头节点：
+        // dumpyUni：用于收集所有不重复的节点
+        // dumpyDup：用于收集所有重复的节点
+        // 值设为101是为了避免与链表中可能出现的节点值冲突
+        ListNode dumpyUni = new ListNode(101);
+        ListNode dumpyDup = new ListNode(101);
+
+        // p1指向重复节点链表的当前末尾
+        // p2指向不重复节点链表的当前末尾
+        ListNode p1 = dumpyDup;
+        ListNode p2 = dumpyUni;
+
+        // cur 用于遍历原链表
+        ListNode cur = head;
+
+        // 遍历整个链表
+        while (cur != null) {
+            // 判断当前节点是否应该放入重复链表：
+            // 条件1：当前节点与下一个节点值相同（说明是重复节点）
+            // 条件2：当前节点值与重复链表最后一个节点值相同（说明也是重复节点）
+            if ((cur.next != null && cur.val == cur.next.val) || cur.val == p1.val) {
+                // 将当前节点连接到重复链表末尾
+                p1.next = cur;
+                p1 = p1.next;  // 更新重复链表的末尾指针
+            } else {
+                // 当前节点不重复，连接到不重复链表末尾
+                p2.next = cur;
+                p2 = p2.next;  // 更新不重复链表的末尾指针
+            }
+
+            // 移动到下一个节点继续处理
+            cur = cur.next;
+
+            // 断开当前节点与原链表的连接，避免形成环
+            // 这很重要，确保每个节点只属于一个链表
+            p1.next = null;
+            p2.next = null;
+        }
+
+        // 返回不重复节点链表的头节点（跳过虚拟头节点）
+        return dumpyUni.next;
+    }
+
+
+    /**
+     * 螺旋顺序遍历二维矩阵
+     * <p>
+     * 算法思路：
+     * 1. 使用四个边界变量控制遍历范围：上边界、下边界、左边界、右边界
+     * 2. 按照"右→下→左→上"的顺序依次遍历矩阵的外圈元素
+     * 3. 每遍历完一条边，相应的边界就向内收缩一格
+     * 4. 重复上述过程直到遍历完所有元素
+     * <p>
+     * 时间复杂度：O(m*n)，其中m和n分别是矩阵的行数和列数
+     * 空间复杂度：O(1)，不考虑结果数组的存储空间
+     *
+     * @param matrix 输入的二维矩阵
+     * @return 螺旋顺序遍历的结果列表
+     */
+    public List<Integer> spiralOrder(int[][] matrix) {
+        // 获取矩阵的行数和列数
+        int m = matrix.length;      // 矩阵的行数
+        int n = matrix[0].length;   // 矩阵的列数
+
+        // 初始化四个边界变量
+        int upper_bound = 0;        // 上边界：初始为第0行
+        int lower_bound = m - 1;    // 下边界：初始为最后一行
+        int right_bound = n - 1;    // 右边界：初始为最后一列
+        int left_bound = 0;         // 左边界：初始为第0列
+
+        // 创建结果列表，用于存储螺旋顺序遍历的元素
+        List<Integer> res = new ArrayList<>();
+
+        // 循环直到遍历完所有元素
+        // 判断条件：结果列表的大小小于矩阵元素总数
+        while (res.size() < m * n) {
+            // 第一步：从左到右遍历上边界这一行
+            // 前提条件：上边界不能超过下边界（确保还有行需要遍历）
+            if (upper_bound <= lower_bound) {
+                // 从左边界到右边界遍历上边界行
+                for (int j = left_bound; j <= right_bound; j++) {
+                    res.add(matrix[upper_bound][j]);
+                }
+                // 遍历完后，上边界向下移动一行
+                upper_bound++;
+            }
+
+            // 第二步：从上到下遍历右边界这一列
+            // 前提条件：左边界不能超过右边界（确保还有列需要遍历）
+            if (left_bound <= right_bound) {
+                // 从上边界到下边界遍历右边界列
+                // 注意：这里的循环变量应该是i（行索引），而不是原代码中的left_bound
+                for (int i = upper_bound; i <= lower_bound; i++) {
+                    res.add(matrix[i][right_bound]);
+                }
+                // 遍历完后，右边界向左移动一列
+                right_bound--;
+            }
+
+            // 第三步：从右到左遍历下边界这一行
+            // 前提条件：上边界不能超过下边界（确保还有行需要遍历）
+            if (upper_bound <= lower_bound) {
+                // 从右边界到左边界遍历下边界行（逆序）
+                for (int j = right_bound; j >= left_bound; j--) {
+                    res.add(matrix[lower_bound][j]);
+                }
+                // 遍历完后，下边界向上移动一行
+                lower_bound--;
+            }
+
+            // 第四步：从下到上遍历左边界这一列
+            // 前提条件：左边界不能超过右边界（确保还有列需要遍历）
+            if (left_bound <= right_bound) {
+                // 从下边界到上边界遍历左边界列（逆序）
+                for (int i = lower_bound; i >= upper_bound; i--) {
+                    res.add(matrix[i][left_bound]);
+                }
+                // 遍历完后，左边界向右移动一列
+                left_bound++;
+            }
+        }
+
+        // 返回螺旋顺序遍历的结果列表
+        return res;
+    }
+
+
+    /**
+     * 螺旋顺序生成 n x n 矩阵
+     * <p>
+     * 算法思路：
+     * 1. 创建一个 n x n 的空矩阵
+     * 2. 使用四个边界变量控制填充范围：上边界、下边界、左边界、右边界
+     * 3. 按照"右→下→左→上"的顺序依次填充数字 1, 2, 3, ..., n²
+     * 4. 每填充完一条边，相应的边界就向内收缩一格
+     * 5. 重复上述过程直到填充完所有位置
+     * <p>
+     * 与 spiralOrder 方法的对比：
+     * - spiralOrder：遍历已有矩阵，按螺旋顺序读取元素
+     * - generateMatrix：生成新矩阵，按螺旋顺序填充递增数字
+     * <p>
+     * 时间复杂度：O(n²)，需要填充 n² 个位置
+     * 空间复杂度：O(1)，不考虑结果矩阵的存储空间
+     *
+     * @param n 矩阵的边长（生成 n x n 的方阵）
+     * @return 按螺旋顺序填充数字 1 到 n² 的矩阵
+     */
+    public int[][] generateMatrix(int n) {
+        // 创建 n x n 的空矩阵，所有元素初始值为0
+        int[][] matrix = new int[n][n];
+
+        // 初始化四个边界变量
+        int upper_bound = 0;        // 上边界：初始为第0行
+        int lower_bound = n - 1;    // 下边界：初始为最后一行
+        int left_bound = 0;         // 左边界：初始为第0列
+        int right_bound = n - 1;    // 右边界：初始为最后一列
+
+        // num用于记录当前要填充的数字，从1开始递增
+        int num = 1;
+
+        // 循环直到填充完所有 n² 个位置
+        // 判断条件：num <= n * n 表示还有数字未填充
+        while (num <= n * n) {
+            // 第一步：从左到右填充上边界这一行
+            // 前提条件：上边界不能超过下边界（确保还有行需要填充）
+            if (upper_bound <= lower_bound) {
+                // 从左边界到右边界依次填充上边界行
+                for (int j = left_bound; j <= right_bound; j++) {
+                    matrix[upper_bound][j] = num++;  // 填充当前数字并递增
+                }
+                // 填充完后，上边界向下移动一行
+                upper_bound++;
+            }
+
+            // 第二步：从上到下填充右边界这一列
+            // 前提条件：左边界不能超过右边界（确保还有列需要填充）
+            if (left_bound <= right_bound) {
+                // 从上边界到下边界依次填充右边界列
+                for (int i = upper_bound; i <= lower_bound; i++) {
+                    matrix[i][right_bound] = num++;  // 填充当前数字并递增
+                }
+                // 填充完后，右边界向左移动一列
+                right_bound--;
+            }
+
+            // 第三步：从右到左填充下边界这一行
+            // 前提条件：上边界不能超过下边界（确保还有行需要填充）
+            if (upper_bound <= lower_bound) {
+                // 从右边界到左边界依次填充下边界行（逆序）
+                for (int j = right_bound; j >= left_bound; j--) {
+                    matrix[lower_bound][j] = num++;  // 填充当前数字并递增
+                }
+                // 填充完后，下边界向上移动一行
+                lower_bound--;
+            }
+
+            // 第四步：从下到上填充左边界这一列
+            // 前提条件：左边界不能超过右边界（确保还有列需要填充）
+            if (left_bound <= right_bound) {
+                // 从下边界到上边界依次填充左边界列（逆序）
+                for (int i = lower_bound; i >= upper_bound; i--) {
+                    matrix[i][left_bound] = num++;  // 填充当前数字并递增
+                }
+                // 填充完后，左边界向右移动一列
+                left_bound++;
+            }
+        }
+
+        // 返回填充完成的螺旋矩阵
+        return matrix;
+    }
+
+
+    /**
+     * 反转字符串中的单词顺序
+     * <p>
+     * 算法思路：
+     * 1. 去除首尾空格并处理单词间的多余空格（保留单个空格）
+     * 2. 翻转整个字符串（所有字符逆序）
+     * 3. 再将每个单词单独翻转（恢复单词内部的正确顺序）
+     * <p>
+     * 示例：
+     * 输入: "  hello world  "
+     * 步骤1: "hello world" （去除多余空格）
+     * 步骤2: "dlrow olleh" （整体翻转）
+     * 步骤3: "world hello" （每个单词单独翻转）
+     * <p>
+     * 时间复杂度：O(n)，其中n是字符串长度
+     * 空间复杂度：O(n)，用于存储StringBuilder
+     *
+     * @param s 输入的字符串
+     * @return 单词顺序反转后的字符串
+     */
+    public String reverseWords(String s) {
+        // 边界检查：如果输入为null，直接返回null
+        if (s == null) return null;
+
+        // 步骤1：去掉首尾空格并处理中间多余空格
+        // 将字符串规范化：去除首尾空格，单词间只保留一个空格
+        StringBuilder sb = trimSpaces(s);
+
+        // 步骤2：翻转整个字符串
+        // 这样单词的顺序就反转了，但每个单词内部的字符也被反转了
+        reverse(sb, 0, sb.length() - 1);
+
+        // 步骤3：翻转每个单词
+        // 将每个单词内部的字符再次反转，恢复单词的正确拼写
+        reverseEachWord(sb);
+
+        // 返回最终结果字符串
+        return sb.toString();
+    }
+
+    /**
+     * 去除字符串首尾空格并处理单词间的多余空格
+     * <p>
+     * 算法步骤：
+     * 1. 使用双指针找到字符串的有效范围（去除首尾空格）
+     * 2. 遍历有效范围内的字符，去除单词间的多余空格
+     * <p>
+     * 处理逻辑：
+     * - 遇到非空格字符：直接添加
+     * - 遇到空格字符：只在前一个字符不是空格时添加（避免连续空格）
+     *
+     * @param s 原始字符串
+     * @return 去除多余空格后的StringBuilder对象
+     */
+    private StringBuilder trimSpaces(String s) {
+        int left = 0, right = s.length() - 1;
+
+        // 去掉字符串开头的所有空格
+        // 从左向右移动left指针，直到遇到第一个非空格字符
+        while (left <= right && s.charAt(left) == ' ') left++;
+
+        // 去掉字符串末尾的所有空格
+        // 从右向左移动right指针，直到遇到最后一个非空格字符
+        while (left <= right && s.charAt(right) == ' ') right--;
+
+        // 去掉单词间的多余空格，只保留一个空格
+        StringBuilder sb = new StringBuilder();
+        while (left <= right) {
+            char c = s.charAt(left);
+
+            // 如果当前字符不是空格，直接添加到结果中
+            if (c != ' ') {
+                sb.append(c);
+            }
+            // 如果当前字符是空格，且前一个字符不是空格，才添加
+            // 这样可以确保单词间只保留一个空格
+            else if (sb.charAt(sb.length() - 1) != ' ') {
+                sb.append(c); // 只保留一个空格
+            }
+            // 如果当前是空格且前一个也是空格，不做任何操作（跳过多余空格）
+
+            left++; // 移动到下一个字符
+        }
+        return sb;
+    }
+
+    /**
+     * 翻转StringBuilder中指定区间的字符
+     * <p>
+     * 算法思路：
+     * 使用双指针从两端向中间移动，交换对应位置的字符
+     * <p>
+     * 示例：
+     * 输入: "hello", left=0, right=4
+     * 过程: h<->o, e<->l, l（中心不动）
+     * 输出: "olleh"
+     *
+     * @param sb    要操作的StringBuilder对象
+     * @param left  起始位置（包含）
+     * @param right 结束位置（包含）
+     */
+    private void reverse(StringBuilder sb, int left, int right) {
+        // 双指针从两端向中间移动
+        while (left < right) {
+            // 暂存左指针位置的字符
+            char temp = sb.charAt(left);
+
+            // 交换左右指针位置的字符
+            sb.setCharAt(left++, sb.charAt(right));   // 将右边字符放到左边，左指针右移
+            sb.setCharAt(right--, temp);              // 将左边字符放到右边，右指针左移
+        }
+        // 当left >= right时，说明所有字符已经交换完成
+    }
+
+    /**
+     * 翻转StringBuilder中的每个单词
+     * <p>
+     * 算法步骤：
+     * 1. 遍历字符串，找到每个单词的起始和结束位置
+     * 2. 对每个单词调用reverse方法进行翻转
+     * 3. 更新指针继续查找下一个单词
+     * <p>
+     * 单词识别：以空格为分隔符，连续的非空格字符组成一个单词
+     *
+     * @param sb 要操作的StringBuilder对象
+     */
+    private void reverseEachWord(StringBuilder sb) {
+        int n = sb.length();
+        int start = 0, end = 0; // start指向单词开始，end用于寻找单词结束
+
+        while (start < n) {
+            // 找到当前单词的末尾位置
+            // end指针向右移动，直到遇到空格或到达字符串末尾
+            while (end < n && sb.charAt(end) != ' ') end++;
+
+            // 此时end指向空格或已超出范围
+            // 翻转从start到end-1的单词（end-1是单词的最后一个字符）
+            reverse(sb, start, end - 1);
+
+            // 更新指针，准备寻找下一个单词
+            start = end + 1;  // 跳过空格，指向下一个单词的开始
+            end++;            // end 也同步移动到下一个位置
+        }
+        // 循环结束时，所有单词都已被翻转
     }
 }
 
