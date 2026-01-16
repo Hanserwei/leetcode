@@ -578,6 +578,197 @@ class Solution {
 
         return res; // 返回最长"表现良好"时间段的长度
     }
+
+    /**
+     * 计算航班预定座位数
+     * <p>
+     * 算法思路：
+     * 1. 使用差分数组优化区间更新操作
+     * 2. 每个预订记录[begin, end, seats]表示在区间[begin, end]上增加seats个座位
+     * 3. 利用差分数组的特性，将区间更新的时间复杂度从O(n)降到O(1)
+     * 4. 最后通过前缀和还原得到最终结果
+     * <p>
+     * 时间复杂度：O(m + n)，其中m是预订记录数，n是航班数
+     * 空间复杂度：O(n)，用于存储差分数组
+     *
+     * @param bookings 预订记录数组，每个元素为[begin, end, seats]，表示在航班[begin, end]上预订seats个座位
+     * @param n        航班总数（航班编号从1到n）
+     * @return 每个航班的座位预订总数
+     */
+    public int[] corpFlightBookings(int[][] bookings, int n) {
+        // 创建长度为n的数组，用于存储每个航班的座位变化情况
+        // 注意：这里应该创建长度为n的数组而不是固定长度5，因为航班数量是动态的
+        int[] res = new int[n];
+
+        // 创建差分数组对象，用于高效处理区间更新操作
+        Difference df = new Difference(res);
+
+        // 遍历所有预订记录
+        for (int[] booking : bookings) {
+            // 获取预订的起始航班（转换为0-based索引）
+            int i = booking[0] - 1;
+            // 获取预订的结束航班（转换为0-based索引）
+            int j = booking[1] - 1;
+            // 获取预订的座位数
+            int k = booking[2];
+
+            // 在差分数组的区间[i, j]上增加k个座位
+            // 这样可以在O(1)时间内完成区间更新
+            df.increment(i, j, k);
+        }
+
+        // 通过前缀和还原原始数组，得到每个航班的最终座位数
+        return df.result();
+    }
+
+    /**
+     * 判断是否能够完成所有行程的拼车需求
+     * <p>
+     * 算法思路：
+     * 1. 使用差分数组来高效处理区间更新操作
+     * 2. 每个行程trip[0]表示乘客数量，trip[1]表示上车地点，trip[2]表示下车地点
+     * 3. 在区间[上车地点, 下车地点-1]上增加乘客数量（下车地点不包含，因为乘客已在该点下车）
+     * 4. 通过前缀和还原数组，检查每个地点的人数是否超过容量限制
+     * <p>
+     * 时间复杂度：O(n + m)，其中n是行程数量，m是地点范围（这里是1001）
+     * 空间复杂度：O(m)，用于存储差分数组
+     *
+     * @param trips    行程数组，每个元素为[乘客数量, 上车地点, 下车地点]
+     * @param capacity 车辆容量
+     * @return 如果能够在不超载的情况下完成所有行程返回true，否则返回false
+     */
+    public boolean carPooling(int[][] trips, int capacity) {
+        // 创建差分数组，处理地点范围0-1000（题目限制最大为1000）
+        Difference difference = new Difference(new int[1001]);
+
+        // 遍历每个行程，更新差分数组
+        for (int[] trip : trips) {
+            int passengerCount = trip[0];  // 当前行程的乘客数量
+            int pickupLocation = trip[1];  // 上车地点
+            int dropOffLocation = trip[2] - 1;  // 下车地点（减1是因为到达下车地点时乘客已下车）
+
+            // 在上车地点到下车地点前一站之间增加乘客数量
+            // 注意：下车地点不包含在区间内，因为乘客在该地点已经下车
+            difference.increment(pickupLocation, dropOffLocation, passengerCount);
+        }
+
+        // 通过前缀和还原实际的乘客数量分布
+        int[] actualPassengerCounts = difference.result();
+
+        // 检查每个地点的乘客数量是否超过车辆容量
+        for (int currentPassengerCount : actualPassengerCounts) {
+            if (currentPassengerCount > capacity) {
+                // 如果某个地点的乘客数量超过了车辆容量，返回false
+                return false;
+            }
+        }
+
+        // 所有地点的乘客数量都不超过容量，返回true
+        return true;
+    }
+
+    /**
+     * 将矩阵顺时针旋转90度
+     * <p>
+     * 算法思路：
+     * 1. 先进行主对角线翻转（转置矩阵）：matrix[i][j] 与 matrix[j][i] 交换
+     * 2. 再对每一行进行水平翻转（反转每行元素）
+     * <p>
+     * 数学原理：
+     * - 主对角线翻转：将矩阵按左上到右下的对角线镜像翻转
+     * - 水平翻转：将每行的元素顺序完全颠倒
+     * - 两步操作的组合效果等价于整个矩阵顺时针旋转90度
+     * <p>
+     * 示例：
+     * 原矩阵：
+     * 1 2 3
+     * 4 5 6
+     * 7 8 9
+     * <p>
+     * 步骤1 - 主对角线翻转后：
+     * 1 4 7
+     * 2 5 8
+     * 3 6 9
+     * <p>
+     * 步骤2 - 每行水平翻转后（最终结果）：
+     * 7 4 1
+     * 8 5 2
+     * 9 6 3
+     * <p>
+     * 时间复杂度：O(n²)，其中n是矩阵的边长
+     * 空间复杂度：O(1)，原地操作
+     *
+     * @param matrix 输入的n×n矩阵
+     */
+    public void rotate(int[][] matrix) {
+        int n = matrix.length; // 获取矩阵的边长
+
+        // 步骤1：沿主对角线翻转矩阵（转置操作）
+        // 只需要遍历上三角部分（j从i开始），避免重复交换
+        for (int i = 0; i < n; i++) {
+            // j从i开始，确保只处理上三角部分，防止同一个位置被交换两次
+            for (int j = i; j < n; j++) {
+                // 交换matrix[i][j]和matrix[j][i]，实现转置
+                int temp = matrix[i][j];      // 临时保存当前位置的值
+                matrix[i][j] = matrix[j][i];  // 将对称位置的值赋给当前位置
+                matrix[j][i] = temp;          // 将临时保存的值赋给对称位置
+            }
+        }
+
+        // 步骤2：对每一行进行水平翻转
+        // 遍历每一行，调用reverse方法将该行元素顺序颠倒
+        for (int[] row : matrix) {
+            // 对每一行调用反转方法，实现水平翻转
+            reverse(row);
+        }
+    }
+
+    /**
+     * 反转一维数组（双指针法）
+     * <p>
+     * 算法思路：
+     * 使用双指针从数组两端向中间移动，交换对应位置的元素
+     * <p>
+     * 时间复杂度：O(n)，其中n是数组长度
+     * 空间复杂度：O(1)，原地操作
+     *
+     * @param row 要反转的一维数组
+     */
+    private void reverse(int[] row) {
+        // 初始化双指针：i指向数组开始，j指向数组结束
+        int i = 0, j = row.length - 1;
+
+        // 当左指针小于右指针时继续交换
+        while (i < j) {
+            // 交换位置 i 和位置 j 的元素
+            int temp = row[i];    // 临时保存左指针位置的值
+            row[i] = row[j];      // 将右指针位置的值赋给左指针位置
+            row[j] = temp;        // 将临时保存的值赋给右指针位置
+
+            // 移动指针：左指针右移，右指针左移
+            i++;  // 左指针向右移动一位
+            j--;  // 右指针向左移动一位
+        }
+    }
+
+    public void rotate2(int[][] matrix) {
+        int n = matrix.length; // 获取矩阵的边长
+
+        for (int i = 0; i < n; i++) {
+            // j的范围是0到n-i-1，确保只处理反对角线一侧的元素，避免重复交换
+            for (int j = 0; j < n - i; j++) {
+                // 交换matrix[i][j]和它的反对角线对称位置matrix[n-1-j][n-1-i]
+                int temp = matrix[i][j];
+                matrix[i][j] = matrix[n - j - 1][n - i - 1];
+                matrix[n - j - 1][n - i - 1] = temp;
+            }
+        }
+
+        for (int[] row : matrix) {
+            // 对每一行调用反转方法，实现水平翻转
+            reverse(row);
+        }
+    }
 }
 
 /**
@@ -808,5 +999,106 @@ class ProductOfNumbers {
         // 两者相除即为最后k个数字的乘积
         // 例如：要求最后3个数的乘积，就是总乘积 ÷ 前面较老的部分的乘积
         return preProduct.get(size - 1) / preProduct.get(size - k - 1);
+    }
+}
+
+/**
+ * 差分数组工具类
+ * <p>
+ * 算法思路：
+ * 1. 差分数组：构造一个数组diff，其中diff[i] = nums[i] - nums[i-1]（i>0），diff[0] = nums[0]
+ * 2. 区间修改：要在区间[i,j]上增加val，只需diff[i] += val，diff[j+1] -= val（如果j+1<n）
+ * 3. 还原数组：通过前缀和还原原数组，res[i] = res[i-1] + diff[i]
+ * <p>
+ * 应用场景：频繁对数组的某个区间进行增减操作，然后还原数组
+ * 时间复杂度：构造O(n)，区间修改O(1)，还原数组O(n)
+ */
+class Difference {
+    /**
+     * 差分数组：diff[i]表示原数组nums[i]与nums[i-1]的差值
+     * 特别地，diff[0] = nums[0]
+     * 通过差分数组可以高效地进行区间增减操作
+     */
+    private final int[] diff;
+
+    /**
+     * 构造差分数组
+     * <p>
+     * 初始化过程：
+     * 1. diff[0] = nums[0]（第一个元素的差值就是它本身）
+     * 2. 对于i > 0，diff[i] = nums[i] - nums[i-1]（相邻元素的差值）
+     *
+     * @param nums 输入的原始数组
+     */
+    public Difference(int[] nums) {
+        // 参数校验：确保输入数组不为null且长度大于0
+        assert nums != null && nums.length > 0;
+
+        // 初始化差分数组，长度与原数组相同
+        diff = new int[nums.length];
+
+        // 设置差分数组的第一个元素等于原数组的第一个元素
+        diff[0] = nums[0];
+
+        // 构建差分数组：每个位置存储相邻元素的差值
+        for (int i = 1; i < nums.length; i++) {
+            // 当前位置的差值 = 当前元素 - 前一个元素
+            diff[i] = nums[i] - nums[i - 1];
+        }
+    }
+
+    /**
+     * 对区间[i, j]增加指定值val
+     * <p>
+     * 核心思想：利用差分数组的特性，O(1)时间完成区间修改
+     * 1. diff[i] += val：影响从位置i开始的所有元素
+     * 2. diff[j + 1] -= val：抵消从位置j+1开始的影响（如果存在）
+     * <p>
+     * 举例：原数组[1,2,3,4,5]，对区间[1,3]增加2
+     * - 操作前：diff = [1,1,1,1,1]
+     * - 操作后：diff[1] += 2, diff[4] -= 2 → diff = [1,3,1,1,-1]
+     * - 还原后：[1,4,5,6,5]（位置1-3确实增加了2）
+     *
+     * @param i   区间起始位置（包含）
+     * @param j   区间结束位置（包含）
+     * @param val 要增加的值
+     */
+    public void increment(int i, int j, int val) {
+        // 在起始位置增加val，这样从i开始的所有元素都会受到影响
+        diff[i] += val;
+
+        // 如果结束位置的下一个位置存在，则减少val，抵消后续的影响
+        // 这样只有[i, j]区间内的元素增加了val
+        if (j + 1 < diff.length) {
+            // 在j+1位置减少val，使得从j+1开始的元素不受此次增量影响
+            diff[j + 1] -= val;
+        }
+    }
+
+    /**
+     * 还原原始数组
+     * <p>
+     * 通过前缀和的方式从差分数组还原出修改后的原数组
+     * 1. res[0] = diff[0]
+     * 2. 对于i > 0，res[i] = res[i-1] + diff[i]
+     * <p>
+     * 这是因为：如果diff是原数组的差分数组，则原数组是diff的前缀和数组
+     *
+     * @return 还原后的数组
+     */
+    public int[] result() {
+        // 创建结果数组，长度与差分数组相同
+        int[] res = new int[diff.length];
+
+        // 第一个元素直接等于差分数组的第一个元素
+        res[0] = diff[0];
+
+        // 通过前缀和还原数组：每个元素等于前一个元素加上对应的差值
+        for (int i = 1; i < diff.length; i++) {
+            // 当前元素 = 前一个元素 + 当前位置的差值
+            res[i] = res[i - 1] + diff[i];
+        }
+
+        return res; // 返回还原后的数组
     }
 }
