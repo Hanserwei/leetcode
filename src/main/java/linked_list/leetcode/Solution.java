@@ -1088,7 +1088,7 @@ class Solution {
     }
 
     /**
-     * 翻转StringBuilder中指定区间的字符
+     * 翻转 StringBuilder 中指定区间的字符
      * <p>
      * 算法思路：
      * 使用双指针从两端向中间移动，交换对应位置的字符
@@ -1098,7 +1098,7 @@ class Solution {
      * 过程: h<->o, e<->l, l（中心不动）
      * 输出: "olleh"
      *
-     * @param sb    要操作的StringBuilder对象
+     * @param sb    要操作的 StringBuilder 对象
      * @param left  起始位置（包含）
      * @param right 结束位置（包含）
      */
@@ -1116,7 +1116,7 @@ class Solution {
     }
 
     /**
-     * 翻转StringBuilder中的每个单词
+     * 翻转 StringBuilder 中的每个单词
      * <p>
      * 算法步骤：
      * 1. 遍历字符串，找到每个单词的起始和结束位置
@@ -1125,7 +1125,7 @@ class Solution {
      * <p>
      * 单词识别：以空格为分隔符，连续的非空格字符组成一个单词
      *
-     * @param sb 要操作的StringBuilder对象
+     * @param sb 要操作的 StringBuilder 对象
      */
     private void reverseEachWord(StringBuilder sb) {
         int n = sb.length();
@@ -1543,6 +1543,417 @@ class NumMatrix {
         // preSum[row2+1][col1]: 从(0,0)到(row2,col1-1)的矩形和（左方部分）
         // preSum[row1][col1]: 从(0,0)到(row1-1,col1-1)的矩形和（左上角重叠部分）
         return preSum[row2 + 1][col2 + 1] - preSum[row1][col2 + 1] - preSum[row2 + 1][col1] + preSum[row1][col1];
+    }
+
+    /**
+     * 寻找数组中所有和为目标值的数对（从指定起始位置开始）
+     * <p>
+     * 算法思路：
+     * 1. 使用双指针技巧（左右指针），适用于有序数组
+     * 2. 左指针从指定起始位置start开始向右移动，右指针从数组末尾向左移动
+     * 3. 根据当前两数之和与目标值的比较结果移动指针：
+     * - 如果和等于目标值：找到一对解，记录结果并跳过重复元素避免重复解
+     * - 如果和小于目标值：左指针右移增大和值
+     * - 如果和大于目标值：右指针左移减小和值
+     * 4. 为了避免重复结果，在找到一个有效数对后，跳过所有相同的元素
+     * <p>
+     * 时间复杂度：O(n)，其中n是数组长度（虽然有嵌套循环，但每个元素最多被访问一次）
+     * 空间复杂度：O(1)，不考虑结果列表的空间
+     *
+     * @param nums   输入的有序整数数组
+     * @param start  搜索的起始位置
+     * @param target 目标和
+     * @return 所有和为 target 的数对组成的列表
+     */
+    public List<List<Integer>> twoSumTarget(int[] nums, int start, int target) {
+        // 创建结果列表，用于存储所有满足条件的数对
+        List<List<Integer>> res = new ArrayList<>();
+
+        // 获取数组长度，用于初始化右指针
+        int n = nums.length;
+
+        // 初始化双指针：左指针指向指定起始位置，右指针指向数组末尾
+        int low = start, high = n - 1;
+
+        // 当左指针小于右指针时继续循环（确保不会重复使用同一个元素）
+        while (low < high) {
+            // 计算当前左右指针所指元素的和
+            int sum = nums[low] + nums[high];
+
+            // 保存当前左右指针的值，用于后续去重判断
+            int left = nums[low], right = nums[high];
+
+            // 情况1：当前和等于目标值，找到一个有效的数对
+            if (sum == target) {
+                // 将找到的数对添加到结果列表中
+                res.add(Arrays.asList(nums[low], nums[high]));
+
+                // 跳过所有与当前左指针值相同的元素，避免重复结果
+                // 继续移动左指针直到遇到不同的值或追上右指针
+                while (low < high && nums[low] == left) {
+                    low++;
+                }
+
+                // 跳过所有与当前右指针值相同的元素，避免重复结果
+                // 继续移动右指针直到遇到不同的值或追上左指针
+                while (low < high && nums[high] == right) {
+                    high--;
+                }
+            }
+            // 情况2：当前和小于目标值，需要增大和值
+            else if (sum < target) {
+                // 左指针右移，选择更大的数
+                low++;
+            }
+            // 情况3：当前和大于目标值，需要减小和值
+            else {
+                // 右指针左移，选择更小的数
+                high--;
+            }
+        }
+
+        // 返回所有找到的数对
+        return res;
+    }
+
+    /**
+     * 寻找数组中所有和为0的三元组
+     * <p>
+     * 算法思路：
+     * 1. 复用threeSumTarget方法，将目标和设为0
+     * 2. 通过固定一个数，转化为两数之和的问题
+     * <p>
+     * 时间复杂度：O(n²)，其中n是数组长度
+     * 空间复杂度：O(1)，不考虑结果列表的空间
+     *
+     * @param nums 输入的整数数组
+     * @return 所有和为0的不重复三元组组成的列表
+     */
+    public List<List<Integer>> threeSum(int[] nums) {
+        // 调用threeSumTarget方法，目标和设为0
+        return threeSumTarget(nums, 0);
+    }
+
+    /**
+     * 寻找数组中所有和为目标值的三元组
+     * <p>
+     * 算法思路：
+     * 1. 排序：先对数组进行排序，便于使用双指针技巧和去重
+     * 2. 固定一个数：遍历数组，将nums[i]作为三元组的第一个数
+     * 3. 转化为两数之和：在nums[i+1:]中寻找和为target-nums[i]的两元组
+     * 4. 合并结果：将nums[i]与找到的两元组合并成三元组
+     * 5. 去重：跳过重复的nums[i]值，避免重复的三元组
+     * <p>
+     * 时间复杂度：O(n²)，其中n是数组长度（排序O(nlogn)，双重循环O(n²)）
+     * 空间复杂度：O(1)，不考虑结果列表的空间
+     *
+     * @param nums   输入的整数数组
+     * @param target 目标和
+     * @return 所有和为 target 的不重复三元组组成的列表
+     */
+    public List<List<Integer>> threeSumTarget(int[] nums, int target) {
+        // 对数组进行排序，这是使用双指针技巧的前提
+        Arrays.sort(nums);
+
+        // 创建结果列表，用于存储所有满足条件的三元组
+        List<List<Integer>> res = new ArrayList<>();
+
+        // 遍历数组，将每个元素作为三元组的第一个数
+        for (int i = 0; i < nums.length; i++) {
+            // 在nums[i+1:]范围内寻找和为target-nums[i]的两元组
+            // 这里复用了twoSumTarget方法，将问题转化为两数之和
+            List<List<Integer>> tuples = twoSumTarget(nums, i + 1, target - nums[i]);
+
+            // 遍历找到的所有两元组，与当前nums[i]组成三元组
+            for (List<Integer> tuple : tuples) {
+                // 将nums[i]与两元组tuple中的两个元素组成新的三元组
+                // tuple.get(0)和tuple.get(1)是twoSumTarget找到的两个数
+                res.add(Arrays.asList(nums[i], tuple.get(0), tuple.get(1)));
+            }
+
+            // 跳过重复的nums[i]值，避免产生重复的三元组
+            // 当nums[i]与nums[i+1]相等时，继续递增i直到找到不同的值
+            while (i + 1 < nums.length && nums[i] == nums[i + 1]) {
+                i++;
+            }
+        }
+
+        // 返回所有找到的三元组
+        return res;
+    }
+
+    /**
+     * 寻找数组中所有和为目标值的四元组
+     * <p>
+     * 算法思路：
+     * 1. 排序：先对数组进行排序，便于使用双指针技巧和去重
+     * 2. 固定一个数：遍历数组，将nums[i]作为四元组的第一个数
+     * 3. 转化为三数之和：在nums[i+1:]中寻找和为target-nums[i]的三元组
+     * 4. 合并结果：将nums[i]与找到的三元组合并成四元组
+     * 5. 去重：跳过重复的nums[i]值，避免重复的四元组
+     * <p>
+     * 时间复杂度：O(n³)，其中n是数组长度（排序O(nlogn)，三重循环O(n³)）
+     * 空间复杂度：O(1)，不考虑结果列表的空间
+     *
+     * @param nums   输入的整数数组
+     * @param target 目标和
+     * @return 所有和为 target 的不重复四元组组成的列表
+     */
+    public List<List<Integer>> fourSum(int[] nums, int target) {
+        // 初始化结果列表，用于存储所有满足条件的四元组
+        List<List<Integer>> res = new ArrayList<>();
+
+        // 首先对数组进行排序，这是使用双指针算法和去重策略的基础
+        // 排序后可以利用数组的有序性进行高效的搜索和去重
+        Arrays.sort(nums);
+
+        // 遍历数组，将每个元素作为四元组的第一个元素
+        // 通过固定第一个元素，将四数之和问题转化为三数之和问题
+        for (int i = 0; i < nums.length; i++) {
+            // 调用threeSumTarget方法，在nums[i+1:]子数组中寻找和为(target-nums[i])的三元组
+            // 这样nums[i] + 三元组的和 = target，构成一个有效的四元组
+            List<List<Integer>> triples = threeSumTarget(nums, target - nums[i]);
+
+            // 遍历所有找到的三元组，将当前固定的nums[i]与每个三元组合并成四元组
+            for (List<Integer> triple : triples) {
+                // 创建新的四元组列表，将当前元素nums[i]添加到三元组前面
+                // 这里创建新列表避免修改原始的triple，防止对后续操作造成影响
+                List<Integer> quadruplet = new ArrayList<>();
+                quadruplet.add(nums[i]);
+                quadruplet.addAll(triple);
+
+                // 将完整的四元组添加到结果列表中
+                res.add(quadruplet);
+            }
+
+            // 跳过重复的nums[i]值，避免产生重复的四元组
+            // 当当前元素与下一个元素相等时，继续递增i直到找到不同的值
+            // 这是去重的关键步骤，确保不会出现重复的四元组
+            while (i + 1 < nums.length && nums[i] == nums[i + 1]) {
+                i++;
+            }
+        }
+
+        // 返回所有找到的不重复四元组
+        return res;
+    }
+
+    /**
+     * 接雨水问题 - 暴力解法
+     * <p>
+     * 算法思路：
+     * 1. 对于每个位置i，计算其能够存储的雨水量
+     * 2. 每个位置能存储的雨水量 = min(左侧最高柱子, 右侧最高柱子) - 当前位置高度
+     * 3. 遍历每个位置，分别向左向右寻找最大值，计算存储的雨水量
+     * <p>
+     * 为什么i从1开始遍历到n-2：
+     * - i从1开始：因为索引0的位置左边没有柱子，无法形成凹槽，所以无法存储雨水
+     * - i到n-2结束：因为索引n-1的位置右边没有柱子，无法形成凹槽，所以无法存储雨水
+     * - 只有中间的位置才有可能被左右两侧的柱子包围形成储水区域
+     * <p>
+     * 时间复杂度：O(n²)，对于每个位置都要遍历整个数组寻找左右最大值
+     * 空间复杂度：O(1)，只使用了常数级别的额外空间
+     *
+     * @param height 表示柱子高度的数组
+     * @return 能够接住的雨水总量
+     */
+    public int trap(int[] height) {
+        int n = height.length; // 获取数组长度
+        int res = 0;           // 记录总的雨水量
+
+        // 从索引1开始遍历到n-2，因为首尾两个位置无法存储雨水
+        for (int i = 1; i < n - 1; i++) {
+            int l_max = 0; // 记录位置 i 左侧的最大高度
+            int r_max = 0; // 记录位置 i 右侧的最大高度
+
+            // 从位置i开始向右遍历到数组末尾，寻找右侧最大高度
+            for (int j = i; j < n; j++) {
+                r_max = Math.max(r_max, height[j]); // 更新右侧最大高度
+            }
+
+            // 从位置i开始向左遍历到数组开头，寻找左侧最大高度
+            for (int j = i; j >= 0; j--) {
+                l_max = Math.max(l_max, height[j]); // 更新左侧最大高度
+            }
+
+            // 位置i能存储的雨水量 = min(左侧最大高度, 右侧最大高度) - 当前位置高度
+            // 这是因为水的高度取决于较矮的那一侧（木桶效应）
+            res += Math.min(r_max, l_max) - height[i];
+        }
+        return res; // 返回总的雨水量
+    }
+
+    /**
+     * 接雨水问题 - 动态规划优化解法
+     * <p>
+     * 算法思路：
+     * 1. 预处理：使用两个数组分别记录每个位置左侧和右侧的最大高度
+     * 2. 对于每个位置i，其能够存储的雨水量 = min(左侧最大高度, 右侧最大高度) - 当前位置高度
+     * 3. 遍历每个位置，累加可存储的雨水量
+     * <p>
+     * 优化点：
+     * - 暴力解法中每次都要向左右遍历寻找最大值，时间复杂度O(n²)
+     * - 本方法预先计算并存储每个位置的左右最大值，查询时间为O(1)，总体时间复杂度降为O(n)
+     * <p>
+     * 时间复杂度：O(n)，其中n是数组长度（三次遍历：计算左最大值、计算右最大值、计算雨水量）
+     * 空间复杂度：O(n)，需要两个额外数组存储左右最大值
+     *
+     * @param height 表示柱子高度的数组
+     * @return 能够接住的雨水总量
+     */
+    public int trap2(int[] height) {
+        int n = height.length; // 获取数组长度
+        int res = 0;           // 记录总的雨水量
+
+        // 创建两个数组分别记录每个位置左侧和右侧的最大高度
+        int[] l_max = new int[n];  // l_max[i] 表示位置 i 及其左侧的最大高度
+        int[] r_max = new int[n];  // r_max[i] 表示位置 i 及其右侧的最大高度
+
+        // 初始化边界值
+        l_max[0] = height[0];         // 位置0左侧的最大高度就是它自己
+        r_max[n - 1] = height[n - 1]; // 位置n-1右侧的最大高度就是它自己
+
+        // 从左到右遍历，计算每个位置及其左侧的最大高度
+        for (int i = 1; i < n; i++) {
+            // 位置i的左侧最大高度 = max(位置i-1的左侧最大高度, 位置i的高度)
+            // 这样可以保证l_max[i]包含了从0到i的所有柱子的最大值
+            l_max[i] = Math.max(l_max[i - 1], height[i]);
+        }
+
+        // 从右到左遍历，计算每个位置及其右侧的最大高度
+        for (int i = n - 2; i >= 0; i--) {
+            // 位置i的右侧最大高度 = max(位置i+1的右侧最大高度, 位置i的高度)
+            // 这样可以保证r_max[i]包含了从i到n-1的所有柱子的最大值
+            r_max[i] = Math.max(r_max[i + 1], height[i]);
+        }
+
+        // 遍历每个位置（除了首尾两个位置，因为它们无法形成凹槽），计算雨水量
+        for (int i = 1; i < n - 1; i++) {
+            // 位置i能存储的雨水量 = min(左侧最大高度, 右侧最大高度) - 当前位置高度
+            // 这是因为水的高度取决于较矮的那一侧（木桶效应）
+            // 只有当前高度小于左右两侧较低的那个高度时，才能存储雨水
+            res += Math.min(l_max[i], r_max[i]) - height[i];
+        }
+
+        return res; // 返回总的雨水量
+    }
+
+    /**
+     * 接雨水问题 - 双指针优化解法
+     * <p>
+     * 算法思路：
+     * 1. 使用双指针从两端向中间移动，同时维护左右两侧的最大高度
+     * 2. 对于每个位置，其能存储的雨水量取决于较矮的一侧（木桶效应）
+     * 3. 总是处理当前较矮的一侧，因为该侧的储水量已经确定（由当前较矮侧决定）
+     * 4. 移动指针继续处理下一个位置
+     * <p>
+     * 优化点：
+     * - 不需要预计算左右最大值数组，节省空间复杂度至O(1)
+     * - 一次遍历完成，时间复杂度O(n)
+     * - 通过双指针避免重复计算，提高效率
+     * <p>
+     * 时间复杂度：O(n)，其中n是数组长度
+     * 空间复杂度：O(1)，只使用了常数级别的额外空间
+     *
+     * @param height 表示柱子高度的数组
+     * @return 能够接住的雨水总量
+     */
+    public int trap3(int[] height) {
+        int n = height.length; // 获取数组长度
+        int res = 0;           // 记录总的雨水量
+
+        int right = n - 1;     // 右指针从数组末尾开始
+        int left = 0;          // 左指针从数组开头开始
+
+        int l_max = 0;         // 记录左指针左侧的最大高度（包含左指针当前位置）
+        int r_max = 0;         // 记录右指针右侧的最大高度（包含右指针当前位置）
+
+        // 双指针相遇前持续循环
+        // 当left == right时，说明所有位置都已处理完毕
+        while (left < right) {
+            // 更新左指针左侧的最大高度
+            // 包括当前位置height[left]在内的左侧最大值
+            l_max = Math.max(l_max, height[left]);
+
+            // 更新右指针右侧的最大高度  
+            // 包括当前位置height[right]在内的右侧最大值
+            r_max = Math.max(r_max, height[right]);
+
+            // 关键逻辑：基于木桶效应原理
+            // 水位高度取决于较矮的一侧，所以我们优先处理较矮的一侧
+            if (l_max < r_max) {
+                // 左侧最大值较小，说明left位置的储水量仅由左侧决定
+                // 因为右侧必定存在更高的柱子（r_max > l_max），所以不用担心右侧"漏水"
+                // 当前位置能存储的雨水 = 左侧最大高度 - 当前位置高度
+                res += l_max - height[left];
+
+                // 处理完left位置后，左指针右移
+                left++;
+            } else {
+                // 右侧最大值较小或相等，说明right位置的储水量仅由右侧决定
+                // 因为左侧必定存在不低于当前r_max的柱子（l_max >= r_max）
+                // 当前位置能存储的雨水 = 右侧最大高度 - 当前位置高度
+                res += r_max - height[right];
+
+                // 处理完right位置后，右指针左移
+                right--;
+            }
+        }
+        return res; // 返回总的雨水量
+    }
+
+    /**
+     * 寻找能盛最多水的容器
+     * <p>
+     * 算法思路：
+     * 1. 使用双指针技巧（左右指针），初始时左指针指向数组开头，右指针指向数组末尾
+     * 2. 计算当前两个指针位置形成的容器面积：min(高度[left], 高度[right]) * (right - left)
+     * 3. 更新最大面积
+     * 4. 移动较短一边的指针：因为容器的容量受限于较短的一边，移动较长边只会减少宽度而不一定能增加容量
+     * 5. 重复步骤2-4直到两个指针相遇
+     * <p>
+     * 核心思想：贪心策略 - 总是移动较短的一边，因为移动较短边可能找到更高的高度从而增加容量
+     * 而移动较长边不可能增加容量，因为容量仍然受限于较短边的高度。
+     * <p>
+     * 时间复杂度：O(n)，其中 n 是数组的长度，每个元素最多被访问一次
+     * 空间复杂度：O(1)，只使用了常数个额外变量
+     *
+     * @param height 表示垂直线条高度的数组
+     * @return 容器能够储存的最大水量
+     */
+    public int maxArea(int[] height) {
+        int n = height.length;         // 获取数组长度
+        int res = 0;                   // 记录最大面积，初始为0
+        int left = 0, right = n - 1;   // 初始化双指针：左指针指向开头，右指针指向末尾
+
+        // 当左指针小于右指针时继续循环（确保两个指针没有相遇）
+        while (left < right) {
+            // 计算当前两个指针位置形成的容器面积
+
+            // 容器高度 = 两个高度中的较小值（短板效应）
+            // 容器宽度 = 两个指针之间的距离
+            // 面积 = 高度 × 宽度
+            int cur_area = Math.min(height[left], height[right]) * (right - left);
+
+            // 更新最大面积：取当前面积和历史最大面积中的较大值
+            res = Math.max(cur_area, res);
+
+            // 关键决策：移动较短一边的指针
+            // 如果左边高度小于右边高度，移动左指针
+            if (height[left] < height[right]) {
+                left++;  // 左指针右移，寻找可能更高的高度
+            } else {
+                // 否则移动右指针（右边高度小于等于左边高度）
+                right--; // 右指针左移，寻找可能更高的高度
+            }
+            // 为什么要移动较短边？
+            // 因为容器容量 = min(h1, h2) * width
+            // 如果移动较高边，新的容量 = min(h1, new_h2) * (width-1)
+            // 由于new_width < old_width，且min(h1, new_h2) <= min(h1, h2)，所以新容量一定小于原容量
+            // 只有移动较短边，才有可能找到更高的高度从而增加容量
+        }
+
+        return res; // 返回找到的最大面积
     }
 }
 
