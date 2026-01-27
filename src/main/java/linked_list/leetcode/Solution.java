@@ -1413,6 +1413,219 @@ class Solution {
         // 所以有效回文子串的起始位置是 l+1，结束位置是 r-1
         return s.substring(l + 1, r);
     }
+
+    /**
+     * 判断 s2 是否包含 s1 的排列
+     * <p>
+     * 算法思路：
+     * 1. 使用滑动窗口技术，窗口大小固定为 s1 的长度
+     * 2. 维护两个哈希表：need 记录 s1 中每个字符的需求频次，window 记录当前窗口中各字符的实际频次
+     * 3. 当窗口大小等于 s1 长度时，检查窗口中的字符频次是否与 s1 中的字符频次完全匹配
+     * 4. 如果匹配成功，说明找到了 s1 的一个排列；否则继续滑动窗口
+     * <p>
+     * 时间复杂度：O(n)，其中 n 是 s2 的长度
+     * 空间复杂度：O(1)，因为字符集大小是常数（最多26个小写字母）
+     *
+     * @param s1 目标字符串，我们要寻找其排列
+     * @param s2 源字符串，在其中查找 s1 的排列
+     * @return 如果 s2 包含 s1 的某个排列，返回 true；否则返回 false
+     */
+    public boolean checkInclusion(String s1, String s2) {
+        // characterNeedCount：记录s1中每个字符的需求频次
+        Map<Character, Integer> characterNeedCount = new HashMap<>();
+        // windowCharacterCount：记录当前滑动窗口中各字符的实际频次
+        Map<Character, Integer> windowCharacterCount = new HashMap<>();
+
+        // 统计s1中每个字符的出现次数，构建需求映射
+        for (char character : s1.toCharArray()) {
+            characterNeedCount.put(character, characterNeedCount.getOrDefault(character, 0) + 1);
+        }
+
+        // 定义滑动窗口的左右边界
+        int windowLeft = 0;
+        int windowRight = 0;
+
+        // matchedCharacterTypes：记录当前窗口中满足需求频次的字符种类数
+        int matchedCharacterTypes = 0;
+
+        // 开始滑动窗口遍历s2
+        while (windowRight < s2.length()) {
+            // 扩展窗口：将右边界字符纳入窗口
+            char incomingChar = s2.charAt(windowRight);
+            windowRight++;
+
+            // 如果当前字符是s1中需要的字符
+            if (characterNeedCount.containsKey(incomingChar)) {
+                // 更新窗口中该字符的计数
+                windowCharacterCount.put(incomingChar, windowCharacterCount.getOrDefault(incomingChar, 0) + 1);
+
+                // 如果窗口中该字符的频次恰好等于需求频次，说明该字符种类达标
+                if (windowCharacterCount.get(incomingChar).equals(characterNeedCount.get(incomingChar))) {
+                    matchedCharacterTypes++;
+                }
+            }
+
+            // 收缩窗口：当窗口长度达到s1长度时开始收缩（因为排列的长度必须等于s1的长度）
+            while (windowRight - windowLeft >= s1.length()) {
+                // 检查当前窗口是否满足条件：所有字符种类都满足需求频次
+                if (matchedCharacterTypes == characterNeedCount.size()) {
+                    return true; // 找到了s1的一个排列
+                }
+
+                // 收缩窗口：将左边界字符移出窗口
+                char outgoingChar = s2.charAt(windowLeft);
+                windowLeft++;
+
+                // 如果移出的字符是s1中需要的字符
+                if (characterNeedCount.containsKey(outgoingChar)) {
+                    // 如果移出前该字符的频次恰好等于需求频次，移出后就不满足了，matchedCharacterTypes减1
+                    if (windowCharacterCount.get(outgoingChar).equals(characterNeedCount.get(outgoingChar))) {
+                        matchedCharacterTypes--;
+                    }
+                    // 更新窗口中该字符的计数
+                    windowCharacterCount.put(outgoingChar, windowCharacterCount.get(outgoingChar) - 1);
+                }
+            }
+        }
+        // 遍历完整个s2都没找到s1的排列，返回false
+        return false;
+    }
+
+    /**
+     * 找到字符串 s 中所有与字符串 t 互为字母异位词的子串的起始索引
+     * <p>
+     * 算法思路：
+     * 1. 使用滑动窗口技术，窗口大小固定为 t 的长度
+     * 2. 维护两个哈希表：need 记录 t 中每个字符的需求频次，window 记录当前窗口中各字符的实际频次
+     * 3. 当窗口大小等于 t 长度时，检查窗口中的字符频次是否与 t 中的字符频次完全匹配
+     * 4. 如果匹配成功，记录起始索引；否则继续滑动窗口
+     * <p>
+     * 字母异位词定义：两个字符串包含相同的字母，且每个字母出现的频次相同，但顺序可以不同
+     * <p>
+     * 时间复杂度：O(n)，其中 n 是 s 的长度
+     * 空间复杂度：O(1)，因为字符集大小是常数（最多26个小写字母）
+     *
+     * @param s 源字符串，在其中查找异位词
+     * @param t 目标字符串，我们要寻找其异位词
+     * @return 所有异位词的起始索引列表
+     */
+    public List<Integer> findAnagrams(String s, String t) {
+        // need：记录目标字符串t中每个字符的需求频次
+        Map<Character, Integer> need = new HashMap<>();
+        // window：记录当前滑动窗口中各字符的实际频次
+        Map<Character, Integer> window = new HashMap<>();
+
+        // 统计目标字符串t中每个字符的出现次数，构建需求映射
+        for (char c : t.toCharArray()) {
+            need.put(c, need.getOrDefault(c, 0) + 1);
+        }
+
+        // 定义滑动窗口的左右边界
+        int left = 0, right = 0;
+        // 存储所有异位词的起始索引
+        List<Integer> ans = new ArrayList<>();
+        // valid：记录当前窗口中满足需求频次的字符种类数
+        int valid = 0;
+
+        // 开始滑动窗口遍历源字符串s
+        while (right < s.length()) {
+            // 扩展窗口：将右边界字符纳入窗口
+            char c = s.charAt(right);
+            right++;
+
+            // 如果当前字符是目标字符串t中需要的字符
+            if (need.containsKey(c)) {
+                // 更新窗口中该字符的计数
+                window.put(c, window.getOrDefault(c, 0) + 1);
+
+                // 如果窗口中该字符的频次恰好等于需求频次，说明该字符种类达标
+                if (window.get(c).equals(need.get(c))) {
+                    valid++;
+                }
+            }
+
+            // 收缩窗口：当窗口长度达到目标字符串t的长度时开始收缩
+            // 因为异位词的长度必须等于目标字符串t的长度
+            while (right - left >= t.length()) {
+                // 检查当前窗口是否满足条件：所有字符种类都满足需求频次
+                // 即窗口中的字符频次与目标字符串t的字符频次完全一致
+                if (valid == need.size()) {
+                    // 找到了一个异位词，记录起始索引
+                    ans.add(left);
+                }
+
+                // 收缩窗口：将左边界字符移出窗口
+                char d = s.charAt(left);
+                left++;
+
+                // 如果移出的字符是目标字符串t中需要的字符
+                if (need.containsKey(d)) {
+                    // 如果移出前该字符的频次恰好等于需求频次，移出后就不满足了，valid减1
+                    if (window.get(d).equals(need.get(d))) {
+                        valid--;
+                    }
+                    // 更新窗口中该字符的计数
+                    window.put(d, window.get(d) - 1);
+                }
+            }
+        }
+        // 返回所有找到的异位词的起始索引列表
+        return ans;
+    }
+    /**
+     * 计算字符串中最长无重复字符子串的长度
+     * <p>
+     * 算法思路：滑动窗口（双指针）+ 哈希表
+     * 1. 使用左右双指针维护一个滑动窗口，窗口内不包含重复字符
+     * 2. 使用哈希表记录窗口中每个字符的出现次数
+     * 3. 右指针不断扩展窗口，当遇到重复字符时收缩窗口
+     * 4. 实时更新最长子串长度
+     * <p>
+     * 时间复杂度：O(n)，其中n是字符串长度，每个字符最多被访问两次（一次入窗，一次出窗）
+     * 空间复杂度：O(min(m,n))，其中m是字符集大小，哈希表最多存储min(m,n)个字符
+     *
+     * @param s 输入字符串
+     * @return 最长无重复字符子串的长度
+     */
+    public int lengthOfLongestSubstring(String s) {
+        // 创建哈希表存储滑动窗口中每个字符的出现次数
+        // key: 字符，value: 该字符在窗口中的出现次数
+        Map<Character, Integer> window = new HashMap<>();
+
+        // 右指针：用于扩展窗口的右边界
+        int right = 0;
+        // 记录最长无重复子串的长度
+        int ans = 0;
+        // 左指针：用于收缩窗口的左边界
+        int left = 0;
+
+        // 当右指针未到达字符串末尾时继续扩展窗口
+        while (right < s.length()) {
+            // 获取右指针指向的字符
+            char c = s.charAt(right);
+            // 右指针右移，扩展窗口右边界
+            right++;
+            // 将字符c加入窗口，更新其出现次数
+            window.put(c, window.getOrDefault(c, 0) + 1);
+
+            // 当窗口中字符c的出现次数超过1（即出现重复）时，需要收缩窗口
+            while (window.get(c) > 1) {
+                // 获取左指针指向的字符
+                char d = s.charAt(left);
+                // 左指针右移，收缩窗口左边界
+                left++;
+                // 将字符d从窗口中移除，更新其出现次数
+                window.put(d, window.get(d) - 1);
+            }
+
+            // 此时窗口[left, right)中不包含重复字符，更新最长子串长度
+            // right - left 是当前窗口的长度
+            ans = Math.max(ans, right - left);
+        }
+
+        // 返回最长无重复字符子串的长度
+        return ans;
+    }
 }
 
 /**
