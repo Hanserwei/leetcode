@@ -1572,6 +1572,7 @@ class Solution {
         // 返回所有找到的异位词的起始索引列表
         return ans;
     }
+
     /**
      * 计算字符串中最长无重复字符子串的长度
      * <p>
@@ -1625,6 +1626,176 @@ class Solution {
 
         // 返回最长无重复字符子串的长度
         return ans;
+    }
+
+    /**
+     * 通过移除数组两端元素使剩余元素和等于x的最少操作次数
+     * <p>
+     * 算法思路：
+     * 1. 转换思维：不是直接找要移除的元素，而是找中间连续子数组的和等于 sum - x
+     * 2. 使用滑动窗口：找到和为 target = sum - x 的最长子数组
+     * 3. 最少操作数 = 总长度 - 最长子数组长度
+     * <p>
+     * 核心思想：如果整个数组的和是sum，我们要移除两端的元素使剩余和为x，
+     * 那么中间保留的连续子数组的和应该是sum-x。为了让移除操作最少，
+     * 我们需要保留尽可能长的中间子数组，这样移除的元素就最少。
+     * <p>
+     * 时间复杂度：O(n)，其中n是数组长度
+     * 空间复杂度：O(1)，只使用了常数个额外变量
+     *
+     * @param nums 输入的正整数数组
+     * @param x    目标剩余和
+     * @return 最少操作次数，如果无法达到目标则返回-1
+     */
+    public int minOperations(int[] nums, int x) {
+        int n = nums.length; // 获取数组长度
+        int left = 0;        // 滑动窗口左指针
+        int right = 0;       // 滑动窗口右指针
+
+        // 计算整个数组的总和
+        int sum = 0;
+        for (int i : nums) {
+            sum += i;
+        }
+
+        // 目标值：中间连续子数组的和应该等于 sum - x
+        // 这样两端移除的元素和就等于 x
+        int target = sum - x;
+
+        int windowSum = 0;      // 当前滑动窗口的和
+        int maxLen = Integer.MIN_VALUE; // 记录满足条件的最长子数组长度
+
+        // 使用滑动窗口寻找和为 target 的最长子数组
+        while (right < n) {
+            // 扩展窗口：将右指针指向的元素加入窗口
+            windowSum += nums[right++];
+
+            // 收缩窗口：如果窗口和大于目标值，移动左指针
+            while (windowSum > target && left < right) {
+                windowSum -= nums[left++]; // 从窗口中移除左指针元素
+            }
+
+            // 检查当前窗口是否满足条件：和等于目标值
+            if (windowSum == target) {
+                // 更新最长子数组长度
+                maxLen = Math.max(maxLen, right - left);
+            }
+        }
+
+        // 如果找到了满足条件的子数组，返回需要移除的元素个数
+        // 否则返回-1表示无法达到目标
+        return maxLen == Integer.MIN_VALUE ? -1 : n - maxLen;
+    }
+
+    /**
+     * 计算数组中所有乘积小于 k 的连续子数组的个数
+     * <p>
+     * 算法思路：滑动窗口（双指针）+ 乘积优化
+     * 1. 使用左右双指针维护一个滑动窗口，窗口内元素的乘积小于k
+     * 2. 右指针不断扩展窗口，当窗口内乘积大于等于k时收缩窗口
+     * 3. 对于每个右端点，统计以该位置为结尾的所有满足条件的子数组个数
+     * <p>
+     * 核心思想：对于当前右指针位置，所有以该位置为结尾且乘积小于k的子数组
+     * 的数量等于当前窗口的长度（right - left）。这是因为窗口[left, right)
+     * 内的所有子数组[nums[left], nums[right]], [nums[left+1], nums[right]], ...
+     * [nums[right-1], nums[right]], [nums[right]]都满足条件。
+     * <p>
+     * 时间复杂度：O(n)，其中n是数组长度，每个元素最多被访问两次（一次入窗，一次出窗）
+     * 空间复杂度：O(1)，只使用了常数个额外变量
+     *
+     * @param nums 输入的正整数数组
+     * @param k    目标乘积阈值
+     * @return 乘积小于k的连续子数组的个数
+     */
+    public int numSubarrayProductLessThanK(int[] nums, int k) {
+        int n = nums.length;         // 获取数组长度
+        int left = 0;                // 滑动窗口左指针，指向窗口的起始位置
+        int right = 0;               // 滑动窗口右指针，指向窗口的结束位置的下一个
+
+        int products = 1;            // 当前窗口内所有元素的乘积，初始为1（乘法单位元）
+        int ans = 0;                 // 记录满足条件的子数组总数
+
+        // 当右指针未到达数组末尾时继续扩展窗口
+        while (right < n) {
+            // 扩展窗口：将右指针指向的元素加入窗口，更新乘积
+            products *= nums[right++]; // 先将nums[right]乘入products，然后右指针右移
+
+            // 收缩窗口：如果当前窗口的乘积大于等于k，需要移动左指针缩小窗口
+            // 注意：必须保证left < right，避免窗口变成负长度
+            while (products >= k && left < right) {
+                products /= nums[left++]; // 先将nums[left]从products中除掉，然后左指针右移
+            }
+
+            // 此时窗口[left, right)内所有元素的乘积小于k
+            // 以right-1位置为结尾的所有满足条件的子数组个数为 right - left
+            // 这些子数组分别是：[right-1], [right-2, right-1], ..., [left, left+1, ..., right-1]
+            ans += right - left; // 累加当前右端点贡献的子数组数量
+        }
+
+        // 返回所有满足条件的连续子数组的总数
+        return ans;
+    }
+
+    /**
+     * 找到最长的连续子数组，使得最多翻转k个0后可以全部变成1
+     * <p>
+     * 算法思路：滑动窗口（双指针）+ 窗口内0的个数统计
+     * 1. 使用左右双指针维护一个滑动窗口，窗口内最多包含k个0
+     * 2. windowOneSum记录窗口内1的个数
+     * 3. right - left - windowOneSum表示窗口内0的个数
+     * 4. 当窗口内0的个数超过k时，收缩窗口
+     * 5. 实时更新最长窗口长度
+     * <p>
+     * 核心思想：我们要找到一个最长的窗口，窗口内最多有k个0，这样我们就可以把这k个0都变成1
+     * <p>
+     * 时间复杂度：O(n)，其中n是数组长度，每个元素最多被访问两次（一次入窗，一次出窗）
+     * 空间复杂度：O(1)，只使用了常数个额外变量
+     *
+     * @param nums 输入的二进制数组（只包含0和1）
+     * @param k    最多可以翻转的0的个数
+     * @return 最长连续子数组的长度，该子数组可以通过翻转最多k个0变成全1
+     */
+    public int longestOnes(int[] nums, int k) {
+        // 滑动窗口左指针，指向窗口的起始位置
+        int left = 0;
+        // 滑动窗口右指针，指向窗口的结束位置的下一个
+        int right = 0;
+
+        // 记录当前窗口内1的个数
+        int windowOneSum = 0;
+        // 记录满足条件的最长子数组长度
+        int res = 0;
+
+        // 当右指针未到达数组末尾时继续扩展窗口
+        while (right < nums.length) {
+            // 扩展窗口：将右指针指向的元素纳入窗口
+            if (nums[right] == 1) {
+                // 如果当前元素是1，更新窗口内1的个数
+                windowOneSum++;
+            }
+            // 右指针右移，扩展窗口右边界
+            right++;
+
+            // 收缩窗口：如果窗口内0的个数超过k个，需要收缩窗口
+            // right - left 是当前窗口的总长度
+            // windowOneSum 是当前窗口内1的个数
+            // right - left - windowOneSum 就是当前窗口内0的个数
+            while (right - left - windowOneSum > k) {
+                // 如果左指针指向的元素是1，从窗口中移除时需要减少1的计数
+                if (nums[left] == 1) {
+                    windowOneSum--;
+                }
+                // 左指针右移，收缩窗口左边界
+                left++;
+            }
+
+            // 此时窗口[left, right)内0的个数不超过k个，满足条件
+            // 更新最长子数组长度
+            res = Math.max(res, right - left);
+        }
+
+        // 返回最长的连续子数组长度
+        return res;
     }
 }
 
