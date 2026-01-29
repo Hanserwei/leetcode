@@ -1936,6 +1936,154 @@ class Solution {
         // 遍历完整个数组都没有找到满足条件的重复元素
         return false;
     }
+
+
+    /**
+     * 判断数组中是否存在两个不同元素，满足索引之差不超过indexDiff且值之差不超过valueDiff
+     * <p>
+     * 算法思路：滑动窗口（双指针）+ TreeSet（有序集合）
+     * 1. 使用滑动窗口维护一个长度不超过indexDiff的窗口
+     * 2. 使用TreeSet存储窗口内的元素，利用其有序性快速查找满足值差条件的元素
+     * 3. 对于每个新元素nums[right]，检查窗口中是否存在元素x，使得|x - nums[right]| <= valueDiff
+     * 4. 利用TreeSet的ceiling和floor方法：
+     *    - ceiling(nums[right])：返回集合中大于或等于nums[right]的最小元素
+     *    - floor(nums[right])：返回集合中小于或等于nums[right]的最大元素
+     * 5. 如果ceiling(nums[right]) - nums[right] <= valueDiff，说明找到了满足条件的元素
+     * 6. 或者如果nums[right] - floor(nums[right]) <= valueDiff，也说明找到了满足条件的元素
+     * <p>
+     * 核心思想：
+     * - 窗口大小限制保证索引差 <= indexDiff
+     * - TreeSet的ceiling和floor方法能够O(log k)时间找到最接近nums[right]的元素
+     * - 只需检查最接近的两个元素（一个大于等于，一个小于等于）即可判断是否存在值差 <= valueDiff的元素
+     * <p>
+     * 为什么只检查ceiling和floor：
+     * 假设存在窗口内的元素x满足|x - nums[right]| <= valueDiff
+     * - 如果x >= nums[right]，那么ceiling(nums[right])必定 <= x，且ceiling更接近nums[right]
+     * - 如果x <= nums[right]，那么floor(nums[right])必定 >= x，且floor更接近nums[right]
+     * 因此，如果ceiling和floor都不满足条件，其他元素也不可能满足条件
+     * <p>
+     * 时间复杂度：O(n log k)，其中n是数组长度，k是窗口大小(indexDiff+1)
+     * 每个元素的插入和删除操作是O(log k)，ceiling和floor查询也是O(log k)
+     * 空间复杂度：O(k)，TreeSet最多存储k+1个元素
+     *
+     * @param nums 输入的整数数组
+     * @param indexDiff 索引之差的上限
+     * @param valueDiff 值之差的上限
+     * @return 如果存在满足条件的两个元素返回true，否则返回false
+     */
+    public boolean containsNearbyAlmostDuplicate(int[] nums, int indexDiff, int valueDiff) {
+        // 滑动窗口左指针，指向窗口的起始位置
+        int left = 0;
+        // 滑动窗口右指针，指向窗口的结束位置的下一个
+        int right = 0;
+
+        // 使用TreeSet存储当前窗口内的元素
+        // TreeSet基于红黑树实现，能够保持元素有序，并支持O(log k)的ceiling和floor查询
+        TreeSet<Integer> window = new TreeSet<>();
+
+        // 当右指针未到达数组末尾时继续扩展窗口
+        while (right < nums.length) {
+            // ceiling方法：返回集合中大于或等于nums[right]的最小元素
+            // 如果这样的元素存在，它是窗口中最接近且不小于nums[right]的值
+            Integer ceiling = window.ceiling(nums[right]);
+            
+            // 检查ceiling是否满足值差条件
+            // ceiling - nums[right] 表示ceiling与当前元素的差值
+            // 如果这个差值 <= valueDiff，说明找到了满足条件的元素
+            if (ceiling != null && ceiling - nums[right] <= valueDiff) {
+                // 找到满足条件的元素对，返回true
+                return true;
+            }
+
+            // floor方法：返回集合中小于或等于nums[right]的最大元素
+            // 如果这样的元素存在，它是窗口中最接近且不大于nums[right]的值
+            Integer floor = window.floor(nums[right]);
+            
+            // 检查floor是否满足值差条件
+            // nums[right] - floor 表示当前元素与floor的差值
+            // 如果这个差值 <= valueDiff，说明找到了满足条件的元素
+            if (floor != null && nums[right] - floor <= valueDiff) {
+                // 找到满足条件的元素对，返回true
+                return true;
+            }
+
+            // 将当前元素加入窗口，并将右指针右移
+            // 扩展窗口右边界
+            window.add(nums[right++]);
+
+            // 收缩窗口：确保窗口长度不超过indexDiff
+            // right - left 是当前窗口的长度
+            // 如果窗口长度 > indexDiff，说明窗口内元素的索引之差可能超过indexDiff
+            if (right - left > indexDiff) {
+                // 移除左指针指向的元素，收缩窗口左边界
+                // 保持窗口大小不超过indexDiff+1（索引差不超过indexDiff）
+                window.remove(nums[left++]);
+            }
+        }
+        
+        // 遍历完整个数组都没有找到满足条件的元素对
+        return false;
+    }
+
+    /**
+     * 长度最小的子数组 - LeetCode 209题
+     * <p>
+     * 问题描述：
+     * 给定一个含有 n 个正整数的数组和一个正整数 target。
+     * 找出该数组中满足其和 ≥ target 的长度最小的连续子数组，并返回其长度。如果不存在符合条件的子数组，返回 0。
+     * <p>
+     * 算法思路：滑动窗口（双指针）
+     * 1. 使用左右双指针维护一个“窗口”，窗口内的元素和为 sum。
+     * 2. 右指针 right 主动向右移动，不断将元素加入窗口以增加 sum。
+     * 3. 当 sum ≥ target 时，尝试收缩左指针 left，在保持 sum ≥ target 的前提下寻找最小窗口。
+     * 4. 在收缩过程中，不断更新结果 res 为当前窗口的最小长度。
+     * <p>
+     * 核心思想：
+     * 利用窗口内元素和的单调性（因为数组元素都是正整数）。
+     * 窗口像一条“毛毛虫”一样在数组上爬行：右边伸长（找满足条件的情况），左边缩短（找最优解）。
+     * <p>
+     * 时间复杂度：O(n)，虽然有嵌套的 while 循环，但每个元素最多被 right 访问一次，被 left 访问一次。
+     * 空间复杂度：O(1)，只使用了常数个额外变量。
+     *
+     * @param target 目标和
+     * @param nums   输入正整数数组
+     * @return 满足条件的最短子数组长度，不存在则返回0
+     */
+    public int minSubArrayLen(int target, int[] nums) {
+        // 滑动窗口的左指针
+        int left = 0;
+        // 滑动窗口的右指针
+        int right = 0;
+
+        // 记录满足条件的最短长度，初始化为最大整数，方便取最小值
+        int res = Integer.MAX_VALUE;
+        // 当前滑动窗口内所有元素的总和
+        int sum = 0;
+
+        // 遍历数组，右指针不断向右扩展
+        while (right < nums.length) {
+            // 将右指针指向的元素加入窗口和中，并移动右指针
+            sum += nums[right++];
+
+            // 当当前窗口的和满足条件（大于等于目标值）时
+            // 尝试通过移动左指针来缩小窗口，寻找可能的最短长度
+            while (sum >= target) {
+                // 更新结果：取当前窗口长度 (right - left) 与历史最小长度的较小值
+                // 注意：由于上面执行了 right++，当前的窗口范围实际上是 [left, right-1]，长度正是 right - left
+                res = Math.min(res, right - left);
+
+                // 准备收缩左边界：先从总和中减去左指针指向的值
+                sum -= nums[left];
+                // 左指针右移，缩小窗口
+                left++;
+            }
+        }
+
+        // 如果 res 还是初始值，说明没有找到满足条件的子数组，返回 0
+        // 否则返回找到的最小长度 res
+        return res == Integer.MAX_VALUE ? 0 : res;
+    }
+
 }
 
 /**
